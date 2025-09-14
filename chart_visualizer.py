@@ -4,31 +4,38 @@ import plotly.graph_objects as go
 import pandas as pd
 import os
 
-def create_interactive_chart(dataframes):
+def create_individual_charts(dataframes):
     """
-    Create an interactive chart to display the data.
+    Create individual charts for each dataset.
 
     Args:
         dataframes (dict): A dictionary where keys are dataset names (e.g., 'gold', 'tesla', 'sp500')
                           and values are the corresponding DataFrames.
     """
-    fig = go.Figure()
-
-    # Add traces for each dataset
     for name, df in dataframes.items():
         if 'Date' in df.columns and 'Close' in df.columns:
+            fig = go.Figure()
             fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name=name))
 
-    # Update layout
-    fig.update_layout(
-        title="Interactive Chart of Gold, Tesla, and S&P500",
-        xaxis_title="Date",
-        yaxis_title="Value",
-        template="plotly_dark"
-    )
+            # Update layout
+            fig.update_layout(
+                title=f"{name} Price Chart",
+                xaxis_title="Date",
+                yaxis_title="Value",
+                template="plotly_dark"
+            )
 
-    # Show the chart
-    fig.show()
+            if name.lower() == "gold":  # Ensure case-insensitive match
+                # Generate a specific chart for Gold
+                fig.update_layout(
+                    title="Gold Daily Price Chart",
+                    xaxis_title="Date",
+                    yaxis_title="Gold Price (USD)",
+                    template="plotly_white"
+                )
+
+            # Show the chart
+            fig.show()
 
 if __name__ == "__main__":
     # Example usage
@@ -41,11 +48,16 @@ if __name__ == "__main__":
     dataframes = {}
     for name, file in files.items():
         if os.path.exists(file):
-            dataframes[name] = pd.read_csv(file)
+            df = pd.read_csv(file)
+            if 'Date' in df.columns:
+                df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date column is in datetime format
+            dataframes[name] = df
+            print(f"Loaded data for {name}: {df.head()}")  # Debug statement to check data loading
         else:
             print(f"Error: {file} not found. Please run the data processing step to generate it.")
 
     if dataframes:
-        create_interactive_chart(dataframes)
+        print("Dataframes passed to chart creation:", dataframes.keys())  # Debug statement to check datasets
+        create_individual_charts(dataframes)
     else:
-        print("No data available to display the chart.")
+        print("No data available to display the charts.")

@@ -34,7 +34,7 @@ def process_data(dataframes):
 if __name__ == "__main__":
     # Example usage
     gold_data = pd.read_csv("gold_price_data.csv")
-    tesla_data = pd.read_csv("tesla_stock_data.csv")
+    tesla_data = pd.read_csv("tesla_stock_price_data.csv")  # Corrected file name
     sp500_data = pd.read_csv("sp500_index_data.csv")
 
     dataframes = {
@@ -46,5 +46,6 @@ if __name__ == "__main__":
     cleaned_data = process_data(dataframes)
 
     for name, df in cleaned_data.items():
+        print(f"{name} data before saving: {len(df)} rows")  # Debug statement to check rows before saving
         df.to_csv(f"cleaned_{name}_data.csv", index=False)
         print(f"Cleaned {name} data saved to cleaned_{name}_data.csv")
