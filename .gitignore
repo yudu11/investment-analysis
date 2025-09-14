@@ -1,0 +1,3 @@
+# Ignore config.json to prevent committing sensitive information
+config.json
+secret/
