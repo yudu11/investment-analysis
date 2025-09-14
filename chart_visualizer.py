@@ -3,6 +3,13 @@
 import plotly.graph_objects as go
 import pandas as pd
 import os
+import webbrowser
+from datetime import datetime
+
+# -----------------------------
+# Configurable options
+# -----------------------------
+OUTPUT_DIR = "./output"   # folder to store HTML charts
 
 def create_individual_charts(dataframes):
     """
@@ -12,6 +19,8 @@ def create_individual_charts(dataframes):
         dataframes (dict): A dictionary where keys are dataset names (e.g., 'gold', 'tesla', 'sp500')
                           and values are the corresponding DataFrames.
     """
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
     for name, df in dataframes.items():
         # Normalize column names to lowercase
         df.columns = map(str.lower, df.columns)
@@ -37,8 +46,18 @@ def create_individual_charts(dataframes):
                     template="plotly_white"
                 )
 
-            # Show the chart
-            fig.show()
+            # -----------------------------
+            # Save chart with timestamp
+            # -----------------------------
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(OUTPUT_DIR, f"{name.lower()}_{timestamp}.html")
+
+            fig.write_html(filename)
+            print(f"Saved chart: {filename}")
+
+            # Open in default browser
+            webbrowser.open(f"file://{os.path.abspath(filename)}")
+
 
 if __name__ == "__main__":
     # Example usage
