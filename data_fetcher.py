@@ -19,7 +19,7 @@ def fetch_gold_price(api_key):
     """
     base_url = "https://www.alphavantage.co/query"
     params = {
-        "function": "TIME_SERIES_DAILY_ADJUSTED",  # Updated function for daily time series data
+        "function": "TIME_SERIES_WEEKLY_ADJUSTED",  # Weekly adjusted time series
         "symbol": "XAUUSD",  # Symbol for gold price in USD
         "apikey": api_key
     }
@@ -29,22 +29,27 @@ def fetch_gold_price(api_key):
     if response.status_code == 200:
         data = response.json()
         print("API Response:", response.json())  # Log the full API response for debugging
-        if "Time Series (Daily)" in data:
+        if "Weekly Adjusted Time Series" in data:
             # Extract relevant fields
-            time_series = data["Time Series (Daily)"]
+            time_series = data["Weekly Adjusted Time Series"]
             df = pd.DataFrame.from_dict(time_series, orient="index")
             df = df.rename(columns={
                 "1. open": "open",
                 "2. high": "high",
                 "3. low": "low",
                 "4. close": "close",
-                "5. volume": "volume"
+                "5. adjusted close": "adjusted_close",
+                "6. volume": "volume",
+                "7. dividend amount": "dividend_amount"
             })
             df.index = pd.to_datetime(df.index)
+            df = df[df.index >= (datetime.now() - timedelta(days=365))]  # Filter past 1 year
             df = df.sort_index()  # Sort by date
+            df.reset_index(inplace=True)  # Ensure 'Date' is a column
+            df.rename(columns={"index": "Date"}, inplace=True)  # Rename index to 'Date'
             return df
         else:
-            raise Exception("Unexpected response format: Missing 'Time Series (Daily)'")
+            raise Exception("Unexpected response format: Missing 'Weekly Adjusted Time Series'")
     else:
         raise Exception(f"Failed to fetch gold price data: {response.status_code}, {response.text}")
 
