@@ -14,10 +14,22 @@ class TestDataFetcher(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "prices": [
-                {"date": "2024-09-14", "price": 1900.0},
-                {"date": "2024-09-13", "price": 1895.0}
-            ]
+            "Time Series (Daily)": {
+                "2025-09-13": {
+                    "1. open": "1900.0",
+                    "2. high": "1910.0",
+                    "3. low": "1890.0",
+                    "4. close": "1905.0",
+                    "5. volume": "1000"
+                },
+                "2025-09-12": {
+                    "1. open": "1895.0",
+                    "2. high": "1905.0",
+                    "3. low": "1885.0",
+                    "4. close": "1890.0",
+                    "5. volume": "1200"
+                }
+            }
         }
         mock_get.return_value = mock_response
 
@@ -28,8 +40,12 @@ class TestDataFetcher(unittest.TestCase):
         # Assertions
         self.assertIsInstance(result, pd.DataFrame)
         self.assertEqual(len(result), 2)
-        self.assertIn("date", result.columns)
-        self.assertIn("price", result.columns)
+        self.assertIn("Date", result.columns)
+        self.assertIn("open", result.columns)
+        self.assertIn("high", result.columns)
+        self.assertIn("low", result.columns)
+        self.assertIn("close", result.columns)
+        self.assertIn("volume", result.columns)
 
     @patch("data_fetcher.requests.get")
     def test_fetch_gold_price_failure(self, mock_get):

@@ -1,3 +1,7 @@
 # Ignore config.json to prevent committing sensitive information
 config.json
 secret/
+
+# Ignore Python bytecode files
+*.pyc
+__pycache__/

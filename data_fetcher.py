@@ -9,7 +9,7 @@ import json
 
 def fetch_gold_price(api_key):
     """
-    Fetch the past 1 year's gold price data using Alpha Vantage API.
+    Fetch the past 1 year's daily gold price data using Alpha Vantage API.
 
     Args:
         api_key (str): API key for authentication.
@@ -19,8 +19,10 @@ def fetch_gold_price(api_key):
     """
     base_url = "https://www.alphavantage.co/query"
     params = {
-        "function": "TIME_SERIES_WEEKLY_ADJUSTED",  # Weekly adjusted time series
+        "function": "TIME_SERIES_DAILY",  # Daily time series
         "symbol": "XAUUSD",  # Symbol for gold price in USD
+        "outputsize": "full",  # Fetch full data to ensure we get 1 year
+        "datatype": "json",  # Get data in JSON format
         "apikey": api_key
     }
 
@@ -28,28 +30,29 @@ def fetch_gold_price(api_key):
 
     if response.status_code == 200:
         data = response.json()
-        print("API Response:", response.json())  # Log the full API response for debugging
-        if "Weekly Adjusted Time Series" in data:
+        print("Debug: API Response Data", data)  # Debug statement
+        if "Time Series (Daily)" in data:
             # Extract relevant fields
-            time_series = data["Weekly Adjusted Time Series"]
+            time_series = data["Time Series (Daily)"]
+            print("Debug: Time Series (Daily)", time_series)  # Debug statement
             df = pd.DataFrame.from_dict(time_series, orient="index")
             df = df.rename(columns={
                 "1. open": "open",
                 "2. high": "high",
                 "3. low": "low",
                 "4. close": "close",
-                "5. adjusted close": "adjusted_close",
-                "6. volume": "volume",
-                "7. dividend amount": "dividend_amount"
+                "5. volume": "volume"
             })
+            print("Debug: DataFrame after renaming columns", df.head())  # Debug statement
             df.index = pd.to_datetime(df.index)
             df = df[df.index >= (datetime.now() - timedelta(days=365))]  # Filter past 1 year
             df = df.sort_index()  # Sort by date
             df.reset_index(inplace=True)  # Ensure 'Date' is a column
             df.rename(columns={"index": "Date"}, inplace=True)  # Rename index to 'Date'
+            print("Debug: Final DataFrame", df.head())  # Debug statement
             return df
         else:
-            raise Exception("Unexpected response format: Missing 'Weekly Adjusted Time Series'")
+            raise Exception("Unexpected response format: Missing 'Time Series (Daily)'")
     else:
         raise Exception(f"Failed to fetch gold price data: {response.status_code}, {response.text}")
 
@@ -112,8 +115,25 @@ if __name__ == "__main__":
         raise EnvironmentError("Please set the SP500_API_KEY in config.json.")
 
     try:
+        # Fetch and save gold price data
         gold_data = fetch_gold_price(api_key_gold)
         gold_data.to_csv("gold_price_data.csv", index=False)
         print("Gold price data saved to gold_price_data.csv")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error fetching gold price data: {e}")
+
+    try:
+        # Fetch Tesla stock price data
+        tesla_data = fetch_tesla_stock_price()
+        tesla_data.to_csv("tesla_stock_price_data.csv", index=False)
+        print("Tesla stock price data saved to tesla_stock_price_data.csv")
+    except Exception as e:
+        print(f"Error fetching Tesla stock price data: {e}")
+
+    try:
+        # Fetch S&P500 index data
+        sp500_data = fetch_sp500_index()
+        sp500_data.to_csv("sp500_index_data.csv", index=False)
+        print("S&P500 index data saved to sp500_index_data.csv")
+    except Exception as e:
+        print(f"Error fetching S&P500 index data: {e}")
