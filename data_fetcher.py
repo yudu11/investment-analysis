@@ -104,15 +104,9 @@ if __name__ == "__main__":
         config = json.load(config_file)
 
     api_key_gold = config.get("GOLD_API_KEY")
-    api_key_tesla = config.get("TESLA_API_KEY")
-    api_key_sp500 = config.get("SP500_API_KEY")
 
     if not api_key_gold:
         raise EnvironmentError("Please set the GOLD_API_KEY in config.json.")
-    if not api_key_tesla:
-        raise EnvironmentError("Please set the TESLA_API_KEY in config.json.")
-    if not api_key_sp500:
-        raise EnvironmentError("Please set the SP500_API_KEY in config.json.")
 
     try:
         # Fetch and save gold price data
