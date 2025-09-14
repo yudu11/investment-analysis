@@ -13,9 +13,12 @@ def create_individual_charts(dataframes):
                           and values are the corresponding DataFrames.
     """
     for name, df in dataframes.items():
-        if 'Date' in df.columns and 'Close' in df.columns:
+        # Normalize column names to lowercase
+        df.columns = map(str.lower, df.columns)
+
+        if 'date' in df.columns and 'close' in df.columns:
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name=name))
+            fig.add_trace(go.Scatter(x=df['date'], y=df['close'], mode='lines', name=name))
 
             # Update layout
             fig.update_layout(
