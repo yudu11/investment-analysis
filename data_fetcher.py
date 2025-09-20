@@ -1,11 +1,13 @@
 # data_fetcher.py
 
-import requests
-import os
-import pandas as pd
-from datetime import datetime, timedelta
-import yfinance as yf
+import argparse
 import json
+from pathlib import Path
+from datetime import datetime, timedelta
+
+import pandas as pd
+import requests
+import yfinance as yf
 
 def fetch_gold_price(api_key):
     """
@@ -68,7 +70,7 @@ def fetch_tesla_stock_price():
 
     # Fetch data for the past year
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
+    start_date = end_date - timedelta(days=730)
 
     tesla_data = yf.download(ticker, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
 
@@ -89,7 +91,7 @@ def fetch_sp500_index():
 
     # Fetch data for the past year
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
+    start_date = end_date - timedelta(days=730)
 
     sp500_data = yf.download(ticker, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
 
@@ -98,9 +100,23 @@ def fetch_sp500_index():
 
     return sp500_data
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Fetch market data and write it to CSV files.")
+    parser.add_argument(
+        "--output-dir",
+        default="output",
+        help="Directory where CSV files will be saved (default: output)",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    # Load API keys from config.json
-    with open("config.json", "r") as config_file:
+    args = parse_args()
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    config_path = Path(__file__).resolve().parent / "config.json"
+    with config_path.open("r", encoding="utf-8") as config_file:
         config = json.load(config_file)
 
     api_key_gold = config.get("GOLD_API_KEY")
@@ -111,23 +127,26 @@ if __name__ == "__main__":
     try:
         # Fetch and save gold price data
         gold_data = fetch_gold_price(api_key_gold)
-        gold_data.to_csv("gold_price_data.csv", index=False)
-        print("Gold price data saved to gold_price_data.csv")
+        gold_path = output_dir / "gold_price_data.csv"
+        gold_data.to_csv(gold_path, index=False)
+        print(f"Gold price data saved to {gold_path}")
     except Exception as e:
         print(f"Error fetching gold price data: {e}")
 
     try:
         # Fetch Tesla stock price data
         tesla_data = fetch_tesla_stock_price()
-        tesla_data.to_csv("tesla_stock_price_data.csv", index=False)
-        print("Tesla stock price data saved to tesla_stock_price_data.csv")
+        tesla_path = output_dir / "tesla_stock_price_data.csv"
+        tesla_data.to_csv(tesla_path, index=False)
+        print(f"Tesla stock price data saved to {tesla_path}")
     except Exception as e:
         print(f"Error fetching Tesla stock price data: {e}")
 
     try:
         # Fetch S&P500 index data
         sp500_data = fetch_sp500_index()
-        sp500_data.to_csv("sp500_index_data.csv", index=False)
-        print("S&P500 index data saved to sp500_index_data.csv")
+        sp500_path = output_dir / "sp500_index_data.csv"
+        sp500_data.to_csv(sp500_path, index=False)
+        print(f"S&P500 index data saved to {sp500_path}")
     except Exception as e:
         print(f"Error fetching S&P500 index data: {e}")

@@ -1,5 +1,8 @@
 # data_processor.py
 
+import argparse
+from pathlib import Path
+
 import pandas as pd
 
 def process_data(dataframes):
@@ -31,21 +34,46 @@ def process_data(dataframes):
 
     return processed_data
 
-if __name__ == "__main__":
-    # Example usage
-    gold_data = pd.read_csv("gold_price_data.csv")
-    tesla_data = pd.read_csv("tesla_stock_price_data.csv")  # Corrected file name
-    sp500_data = pd.read_csv("sp500_index_data.csv")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Clean raw market datasets and persist normalized CSV files.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="output",
+        help="Directory containing raw CSVs and where cleaned files will be saved (default: output)",
+    )
+    return parser.parse_args()
 
-    dataframes = {
-        "gold": gold_data,
-        "tesla": tesla_data,
-        "sp500": sp500_data
+
+if __name__ == "__main__":
+    args = parse_args()
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    input_files = {
+        "gold": output_dir / "gold_price_data.csv",
+        "tesla": output_dir / "tesla_stock_price_data.csv",
+        "sp500": output_dir / "sp500_index_data.csv",
     }
+
+    dataframes = {}
+    missing_files = []
+    for name, path in input_files.items():
+        if path.exists():
+            dataframes[name] = pd.read_csv(path)
+        else:
+            missing_files.append(path)
+
+    if missing_files:
+        print("Error: Missing expected input files:")
+        for path in missing_files:
+            print(f" - {path}")
+        exit(1)
 
     cleaned_data = process_data(dataframes)
 
     for name, df in cleaned_data.items():
-        print(f"{name} data before saving: {len(df)} rows")  # Debug statement to check rows before saving
-        df.to_csv(f"cleaned_{name}_data.csv", index=False)
-        print(f"Cleaned {name} data saved to cleaned_{name}_data.csv")
+        output_path = output_dir / f"cleaned_{name}_data.csv"
+        df.to_csv(output_path, index=False)
+        print(f"Cleaned {name} data saved to {output_path}")

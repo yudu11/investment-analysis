@@ -1,17 +1,15 @@
 # chart_visualizer.py
 
-import plotly.graph_objects as go
-import pandas as pd
-import os
-import webbrowser
+import argparse
 from datetime import datetime
+from pathlib import Path
+import webbrowser
 
-# -----------------------------
-# Configurable options
-# -----------------------------
-OUTPUT_DIR = "./output"   # folder to store HTML charts
+import pandas as pd
+import plotly.graph_objects as go
 
-def create_individual_charts(dataframes):
+
+def create_individual_charts(dataframes, output_dir: Path):
     """
     Create individual charts for each dataset.
 
@@ -19,11 +17,11 @@ def create_individual_charts(dataframes):
         dataframes (dict): A dictionary where keys are dataset names (e.g., 'gold', 'tesla', 'sp500')
                           and values are the corresponding DataFrames.
     """
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     for name, df in dataframes.items():
         # Normalize column names to lowercase
-        df.columns = map(str.lower, df.columns)
+        df.columns = [col.lower() for col in df.columns]
 
         if 'date' in df.columns and 'close' in df.columns:
             fig = go.Figure()
@@ -50,36 +48,51 @@ def create_individual_charts(dataframes):
             # Save chart with timestamp
             # -----------------------------
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = os.path.join(OUTPUT_DIR, f"{name.lower()}_{timestamp}.html")
+            filename = output_dir / f"{name.lower()}_{timestamp}.html"
 
-            fig.write_html(filename)
+            fig.write_html(str(filename))
             print(f"Saved chart: {filename}")
 
             # Open in default browser
-            webbrowser.open(f"file://{os.path.abspath(filename)}")
+            webbrowser.open(filename.resolve().as_uri())
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate Plotly HTML charts for cleaned market datasets.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="output",
+        help="Directory containing cleaned CSVs and where charts will be written (default: output)",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    # Example usage
+    args = parse_args()
+    output_dir = Path(args.output_dir)
+    data_dir = output_dir
+
     files = {
-        "Gold": "cleaned_gold_data.csv",
-        "Tesla": "cleaned_tesla_data.csv",
-        "S&P500": "cleaned_sp500_data.csv"
+        "Gold": data_dir / "cleaned_gold_data.csv",
+        "Tesla": data_dir / "cleaned_tesla_data.csv",
+        "S&P500": data_dir / "cleaned_sp500_data.csv",
     }
 
     dataframes = {}
-    for name, file in files.items():
-        if os.path.exists(file):
-            df = pd.read_csv(file)
+    for name, file_path in files.items():
+        if file_path.exists():
+            df = pd.read_csv(file_path)
             if 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'])  # Ensure Date column is in datetime format
             dataframes[name] = df
-            print(f"Loaded data for {name}: {df.head()}")  # Debug statement to check data loading
+            print(f"Loaded data for {name}: {file_path}")
         else:
-            print(f"Error: {file} not found. Please run the data processing step to generate it.")
+            print(f"Error: {file_path} not found. Please run the data processing step to generate it.")
 
     if dataframes:
-        print("Dataframes passed to chart creation:", dataframes.keys())  # Debug statement to check datasets
-        create_individual_charts(dataframes)
+        print("Dataframes passed to chart creation:", dataframes.keys())
+        create_individual_charts(dataframes, output_dir)
     else:
         print("No data available to display the charts.")
